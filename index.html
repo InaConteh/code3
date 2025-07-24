@@ -26,8 +26,8 @@
       <h2 class="text-2xl font-semibold mb-4">Get in Touch</h2>
       <p>If you have any questions, feel free to reach out:</p>
       <p class="mt-2">
-        <a href="mailto:kamaraisaacpatrick.com" class="text-blue-600 underline hover:text-blue-800">
-          kamaraisaacpatrick.com
+        <a href="mailto:kamaraisaacpatrick@gmail.com" class="text-blue-600 underline hover:text-blue-800 inline-flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12H8m0 0l4-4m-4 4l4 4" /></svg> kamaraisaacpatrick@gmail.com
         </a>
       </p>
     </section>
@@ -37,6 +37,16 @@
       <form class="space-y-4" id="registrationForm">
         <input type="text" id="name" placeholder="Your Name" class="w-full border p-2 rounded" required />
         <input type="email" id="email" placeholder="Your Email" class="w-full border p-2 rounded" required />
+
+        <fieldset>
+          <legend class="font-medium mb-2">Which software are you interested in?</legend>
+          <div class="space-y-1">
+            <label><input type="checkbox" value="AutoCAD" class="interest mr-2">AutoCAD</label><br>
+            <label><input type="checkbox" value="ArchiCAD" class="interest mr-2">ArchiCAD</label><br>
+            <label><input type="checkbox" value="Revit" class="interest mr-2">Revit</label>
+          </div>
+        </fieldset>
+
         <button type="submit" class="bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-800">
           Submit Registration
         </button>
@@ -45,11 +55,19 @@
         Thank you for registering! We have received your details.
       </div>
 
-      <div class="mt-6">
+      <div class="mt-6 hidden" id="adminPanel">
         <h3 class="text-xl font-semibold mb-2">Registered Students</h3>
         <ul id="studentList" class="list-disc list-inside space-y-1 text-gray-700"></ul>
+
         <button id="downloadBtn" class="mt-4 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
           Download Registered Students (CSV)
+        </button>
+      </div>
+
+      <div class="mt-6 space-y-2" id="adminUnlock">
+        <input type="password" id="adminCode" placeholder="Enter admin code to unlock" class="w-full border p-2 rounded" />
+        <button id="enableDownload" class="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700">
+          Unlock Admin Panel
         </button>
       </div>
     </section>
@@ -62,14 +80,21 @@
     const confirmation = document.getElementById('confirmation');
     const studentList = document.getElementById('studentList');
     const downloadBtn = document.getElementById('downloadBtn');
+    const enableDownload = document.getElementById('enableDownload');
+    const adminCodeInput = document.getElementById('adminCode');
+    const adminPanel = document.getElementById('adminPanel');
+    const adminUnlock = document.getElementById('adminUnlock');
+
+    const ADMIN_CODE = "code3admin";
+    const ADMIN_EMAIL = "kamaraisaacpatrick@gmail.com";
 
     let students = JSON.parse(localStorage.getItem('students') || '[]');
 
     function renderList() {
       studentList.innerHTML = '';
-      students.forEach(({ name, email }) => {
+      students.forEach(({ name, email, interests }) => {
         const li = document.createElement('li');
-        li.textContent = `${name} (${email})`;
+        li.textContent = `${name} (${email}) - Interested in: ${interests.join(', ')}`;
         studentList.appendChild(li);
       });
     }
@@ -78,23 +103,52 @@
       localStorage.setItem('students', JSON.stringify(students));
     }
 
+    function sendEmailNotification(name, email, interests) {
+      const mailtoLink = `mailto:${ADMIN_EMAIL}?subject=New%20Student%20Registered&body=Name:%20${encodeURIComponent(name)}%0AEmail:%20${encodeURIComponent(email)}%0AInterests:%20${encodeURIComponent(interests.join(', '))}`;
+      const tempLink = document.createElement('a');
+      tempLink.href = mailtoLink;
+      tempLink.style.display = 'none';
+      document.body.appendChild(tempLink);
+      tempLink.click();
+      document.body.removeChild(tempLink);
+    }
+
     form.addEventListener('submit', function(event) {
       event.preventDefault();
       const name = nameInput.value.trim();
       const email = emailInput.value.trim();
-      if (name && email) {
-        students.push({ name, email });
+      const interestNodes = document.querySelectorAll('.interest:checked');
+      const interests = Array.from(interestNodes).map(el => el.value);
+
+      if (name && email && interests.length > 0) {
+        students.push({ name, email, interests });
         saveToLocalStorage();
         renderList();
         confirmation.classList.remove('hidden');
         nameInput.value = '';
         emailInput.value = '';
+        document.querySelectorAll('.interest').forEach(i => i.checked = false);
+        sendEmailNotification(name, email, interests);
+      } else {
+        alert('Please fill out all fields and select at least one interest.');
+      }
+    });
+
+    enableDownload.addEventListener('click', function() {
+      const entered = adminCodeInput.value.trim();
+      if (entered === ADMIN_CODE) {
+        adminPanel.classList.remove('hidden');
+        adminUnlock.classList.add('hidden');
+        renderList();
+      } else {
+        alert('Incorrect admin code.');
       }
     });
 
     downloadBtn.addEventListener('click', function() {
       if (!students.length) return alert('No students to download');
-      let csvContent = 'Name,Email\n' + students.map(s => `${s.name},${s.email}`).join('\n');
+      let csvContent = 'Name,Email,Interests\n' +
+        students.map(s => `${s.name},${s.email},"${s.interests.join('; ')}"`).join('\n');
       const blob = new Blob([csvContent], { type: 'text/csv' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -102,8 +156,6 @@
       a.download = 'registered_students.csv';
       a.click();
     });
-
-    renderList();
   </script>
 </body>
 </html>
