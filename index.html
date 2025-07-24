@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>code3 - Registration</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-900">
+  <div class="max-w-2xl mx-auto px-4 py-10">
+    <header class="mb-10">
+      <h1 class="text-4xl font-bold text-center text-blue-700">code3</h1>
+      <p class="text-center text-lg mt-2">Register to Learn CAD Tools</p>
+    </header>
+
+    <section class="mb-8">
+      <h2 class="text-2xl font-semibold mb-4">Software You'll Learn:</h2>
+      <ul class="list-disc list-inside space-y-2">
+        <li>AutoCAD</li>
+        <li>ArchiCAD</li>
+        <li>Revit</li>
+      </ul>
+    </section>
+
+    <section class="mb-8">
+      <h2 class="text-2xl font-semibold mb-4">Get in Touch</h2>
+      <p>If you have any questions, feel free to reach out:</p>
+      <p class="mt-2">
+        <a href="mailto:kamaraisaacpatrick.com" class="text-blue-600 underline hover:text-blue-800">
+          kamaraisaacpatrick.com
+        </a>
+      </p>
+    </section>
+
+    <section>
+      <h2 class="text-2xl font-semibold mb-4">Register</h2>
+      <form class="space-y-4" id="registrationForm">
+        <input type="text" id="name" placeholder="Your Name" class="w-full border p-2 rounded" required />
+        <input type="email" id="email" placeholder="Your Email" class="w-full border p-2 rounded" required />
+        <button type="submit" class="bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-800">
+          Submit Registration
+        </button>
+      </form>
+      <div id="confirmation" class="mt-4 text-green-600 font-medium hidden">
+        Thank you for registering! We have received your details.
+      </div>
+
+      <div class="mt-6">
+        <h3 class="text-xl font-semibold mb-2">Registered Students</h3>
+        <ul id="studentList" class="list-disc list-inside space-y-1 text-gray-700"></ul>
+        <button id="downloadBtn" class="mt-4 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+          Download Registered Students (CSV)
+        </button>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const form = document.getElementById('registrationForm');
+    const nameInput = document.getElementById('name');
+    const emailInput = document.getElementById('email');
+    const confirmation = document.getElementById('confirmation');
+    const studentList = document.getElementById('studentList');
+    const downloadBtn = document.getElementById('downloadBtn');
+
+    let students = JSON.parse(localStorage.getItem('students') || '[]');
+
+    function renderList() {
+      studentList.innerHTML = '';
+      students.forEach(({ name, email }) => {
+        const li = document.createElement('li');
+        li.textContent = `${name} (${email})`;
+        studentList.appendChild(li);
+      });
+    }
+
+    function saveToLocalStorage() {
+      localStorage.setItem('students', JSON.stringify(students));
+    }
+
+    form.addEventListener('submit', function(event) {
+      event.preventDefault();
+      const name = nameInput.value.trim();
+      const email = emailInput.value.trim();
+      if (name && email) {
+        students.push({ name, email });
+        saveToLocalStorage();
+        renderList();
+        confirmation.classList.remove('hidden');
+        nameInput.value = '';
+        emailInput.value = '';
+      }
+    });
+
+    downloadBtn.addEventListener('click', function() {
+      if (!students.length) return alert('No students to download');
+      let csvContent = 'Name,Email\n' + students.map(s => `${s.name},${s.email}`).join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'registered_students.csv';
+      a.click();
+    });
+
+    renderList();
+  </script>
+</body>
+</html>
