@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard - code3</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-800">
+  <div class="max-w-4xl mx-auto py-10 px-6">
+    <h1 class="text-3xl font-bold text-blue-700 mb-6 text-center">Registered Students - Admin Dashboard</h1>
+
+    <div id="authSection" class="space-y-4">
+      <input type="password" id="adminCodeInput" placeholder="Enter admin code..." class="w-full p-2 border rounded">
+      <button id="authBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+        View Registered Students
+      </button>
+    </div>
+
+    <div id="studentSection" class="hidden mt-10">
+      <h2 class="text-xl font-semibold mb-4">Total Registered: <span id="studentCount">0</span></h2>
+      <table class="w-full border text-left">
+        <thead class="bg-blue-200">
+          <tr>
+            <th class="p-2 border">Name</th>
+            <th class="p-2 border">Email</th>
+            <th class="p-2 border">Interests</th>
+            <th class="p-2 border">Date</th>
+          </tr>
+        </thead>
+        <tbody id="studentTable" class="bg-white divide-y"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const adminCode = "secure123";
+    const authBtn = document.getElementById("authBtn");
+    const adminCodeInput = document.getElementById("adminCodeInput");
+    const authSection = document.getElementById("authSection");
+    const studentSection = document.getElementById("studentSection");
+    const studentTable = document.getElementById("studentTable");
+    const studentCount = document.getElementById("studentCount");
+
+    authBtn.addEventListener("click", () => {
+      const code = adminCodeInput.value.trim();
+      if (code === adminCode) {
+        authSection.classList.add("hidden");
+        studentSection.classList.remove("hidden");
+        loadStudents();
+      } else {
+        alert("Incorrect admin code.");
+      }
+    });
+
+    async function loadStudents() {
+      try {
+        const res = await fetch("https://dashboard.render.com/d/dpg-d21mle7gi27c73e480o0-a"); // replace with your backend URL
+        const data = await res.json();
+        studentCount.textContent = data.length;
+        data.forEach((s) => {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td class="p-2 border">${s.name}</td>
+            <td class="p-2 border">${s.email}</td>
+            <td class="p-2 border">${s.interests.join(", ")}</td>
+            <td class="p-2 border">${new Date(s.registered_at).toLocaleString()}</td>
+          `;
+          studentTable.appendChild(row);
+        });
+      } catch (err) {
+        alert("Failed to fetch students.");
+      }
+    }
+  </script>
+</body>
+</html>
